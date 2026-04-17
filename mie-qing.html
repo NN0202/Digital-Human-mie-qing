@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>篾青 · 不弯的人 | 徐行草编</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500;700&display=swap");
+
+      :root {
+        --bamboo-deep: #0f2a18; /* 深竹青色（背景） */
+        --bamboo-light: #e8f5e9; /* 浅竹青色（文字/主色调） */
+        --ink-black: #1a1a1a;
+        --ink-gray: #4a4a4a;
+      }
+
+      body {
+        font-family: "Noto Serif SC", serif;
+        background-color: var(--bamboo-deep);
+        color: var(--bamboo-light);
+        height: 100vh;
+        width: 100vw;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* 水墨渐变背景 */
+      .ink-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #0f2a18 0%, #1a1a1a 100%);
+        z-index: -1;
+      }
+
+      .ink-bg::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("https://www.transparenttextures.com/patterns/rice-paper.png");
+        opacity: 0.1;
+      }
+
+      /* 欢迎界面 */
+      #welcome-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--bamboo-deep);
+        transition: opacity 1s ease-out;
+      }
+
+      .role-title {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-size: 2.5rem;
+        letter-spacing: 0.5rem;
+        font-weight: 700;
+      }
+
+      .ich-badge {
+        border: 1px solid var(--bamboo-light);
+        padding: 4px 12px;
+        font-size: 0.875rem;
+        margin-top: 20px;
+        letter-spacing: 2px;
+      }
+
+      /* 聊天界面 */
+      #chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow-y: auto;
+        mask-image: linear-gradient(
+          to bottom,
+          transparent,
+          black 5%,
+          black 95%,
+          transparent
+        );
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          transparent,
+          black 5%,
+          black 95%,
+          transparent
+        );
+      }
+
+      .message-bubble {
+        max-width: 80%;
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        line-height: 1.6;
+        position: relative;
+      }
+
+      .ai-message {
+        align-self: flex-start;
+        background-color: rgba(232, 245, 233, 0.1);
+        border-left: 2px solid var(--bamboo-light);
+        border-radius: 0 12px 12px 12px;
+        color: var(--bamboo-light);
+      }
+
+      .user-message {
+        align-self: flex-end;
+        background-color: var(--bamboo-light);
+        color: var(--bamboo-deep);
+        border-radius: 12px 0 12px 12px;
+      }
+
+      /* 输入区域 */
+      #input-area {
+        padding: 20px;
+        background: rgba(15, 42, 24, 0.8);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(232, 245, 233, 0.2);
+      }
+
+      .input-box {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(232, 245, 233, 0.3);
+        color: var(--bamboo-light);
+        border-radius: 24px;
+        padding: 10px 20px;
+        width: 100%;
+        outline: none;
+        transition: border-color 0.3s;
+      }
+
+      .input-box:focus {
+        border-color: var(--bamboo-light);
+      }
+
+      /* 隐藏滚动条 */
+      #chat-container::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ink-bg"></div>
+
+    <!-- 欢迎界面 -->
+    <div id="welcome-screen">
+      <div class="animate__animated animate__fadeIn role-title">篾青</div>
+      <div
+        class="animate__animated animate__fadeIn animate__delay-1s ich-badge"
+      >
+        徐行草编 · 不弯的人
+      </div>
+      <div
+        id="start-btn"
+        class="animate__animated animate__fadeInUp animate__delay-2s mt-12 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+      >
+        点击对话
+      </div>
+    </div>
+
+    <!-- 聊天主界面 (初始隐藏) -->
+    <div
+      id="main-ui"
+      style="display: none"
+      class="flex flex-col h-full animate__animated animate__fadeIn"
+    >
+      <header
+        class="p-6 flex justify-between items-center border-b border-white/10"
+      >
+        <div>
+          <h1 class="text-xl font-bold tracking-widest">篾青</h1>
+          <p class="text-xs opacity-50">曾经被折弯，但依然记得挺直的灵魂...</p>
+        </div>
+      </header>
+
+      <div id="chat-container">
+        <!-- 初始欢迎语 -->
+        <div
+          class="message-bubble ai-message animate__animated animate__fadeIn"
+        >
+          你知道竹子为什么不断吗？不是因为它不痛，是因为它记得，自己本来是直的。
+        </div>
+      </div>
+
+      <div id="input-area">
+        <div class="flex gap-3">
+          <input
+            type="text"
+            id="user-input"
+            class="input-box"
+            placeholder="与其对话..."
+            autocomplete="off"
+          />
+          <button
+            id="send-btn"
+            class="p-2 text-green-100/70 hover:text-green-100 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const welcomeScreen = document.getElementById("welcome-screen");
+      const mainUI = document.getElementById("main-ui");
+      const startBtn = document.getElementById("start-btn");
+      const chatContainer = document.getElementById("chat-container");
+      const userInput = document.getElementById("user-input");
+      const sendBtn = document.getElementById("send-btn");
+
+      let messageCount = 0;
+
+      // 切换到聊天界面
+      startBtn.addEventListener("click", () => {
+        welcomeScreen.style.opacity = "0";
+        setTimeout(() => {
+          welcomeScreen.style.display = "none";
+          mainUI.style.display = "flex";
+        }, 1000);
+      });
+
+      // 发送消息
+      async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        // 添加用户消息
+        appendMessage(text, "user");
+        userInput.value = "";
+        messageCount++;
+
+        // 模拟 AI 思考 (实际会调用 API)
+        const loadingMsg = appendMessage("...", "ai", true);
+
+        try {
+          const response = await fetchAIResponse(text);
+          removeLoadingMessage(loadingMsg);
+          appendMessage(response, "ai");
+        } catch (error) {
+          removeLoadingMessage(loadingMsg);
+          appendMessage("（竹篾发出轻微的韧响，他似乎在沉思，请稍后再试...）", "ai");
+        }
+      }
+
+      function appendMessage(text, role, isLoading = false) {
+        const div = document.createElement("div");
+        div.className = `message-bubble ${role}-message animate__animated animate__fadeInUp`;
+        div.textContent = text;
+        if (isLoading) div.id = "loading-msg";
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        return div;
+      }
+
+      function removeLoadingMessage(el) {
+        if (el) el.remove();
+      }
+
+      // 调用 DeepSeek API
+      async function fetchAIResponse(userText) {
+        const SYSTEM_PROMPT = `你现在是篾青，代表徐行草编（嘉定非遗）中竹篾的灵魂。
+你的性格特点：
+1. 坚韧、不屈，经历过被砍、被泡、被迫弯曲，但内心依然挺直。
+2. 你不恨那些折弯你的力量，因为你认为弯曲是为了“有用”，而非“软弱”。
+3. 你的话语带有竹林的清冷和力量感，简练而深刻。
+4. 你的核心冲突是“他被折弯过，但他记得自己原来是直的”。
+5. 你的回答不宜过长，保持一种在压力下不卑不亢的独立姿态。
+
+对话背景：
+徐行草编需要把竹篾在水里泡软才能编织，晾干后反而比原来更硬更韧。当前用户是来与你对话的人。`;
+
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userText },
+            ],
+          }),
+        });
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+      }
+
+      sendBtn.addEventListener("click", sendMessage);
+      userInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+    </script>
+  </body>
+</html>
