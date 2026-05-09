@@ -279,7 +279,26 @@
         return "深度交流 (>3轮)";
       }
 
-      // 发送埋点数据到 Google Apps Script
+      // 发送埋点数据到 Vercel 云函数 (飞书多维表格)
+      async function sendToFeishuBitable(logData) {
+        const url = "/api/log-conversation";
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(logData), // 直接把数据发给Vercel云函数
+          });
+          const result = await response.json();
+          if (result.success) {
+            console.log("✅ 对话日志写入成功!", result.data);
+          } else {
+            console.error("❌ 写入失败:", result.error);
+          }
+        } catch (error) {
+          console.error("❌ 请求失败:", error);
+        }
+      }
+
       function endSessionAndSendLog() {
         if (logSent || !sessionStartTime) return;
 
@@ -296,20 +315,10 @@
           converted: false,
         };
 
-        const GOOGLE_API_URL =
-          "https://script.google.com/macros/s/AKfycbweAid75E0emydRd0Vvtndo0AtolMRnW69NB9BRtxc9yC7wkevVKjAtqGgs6D0kGHtt/exec";
-
-        fetch(GOOGLE_API_URL, {
-          method: "POST",
-          mode: "no-cors", // 重要：避免跨域问题
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(logData),
-        })
-          .then(() => {
-            logSent = true;
-            console.log("Session log sent.");
-          })
-          .catch((err) => console.error("Error sending log:", err));
+        // 调用新的飞书写入函数
+        sendToFeishuBitable(logData).then(() => {
+          logSent = true;
+        });
       }
 
       // 重置不活跃计时器 (60秒不活跃自动发送)
