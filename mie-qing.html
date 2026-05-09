@@ -324,7 +324,7 @@
       // 重置不活跃计时器 (60秒不活跃自动发送)
       function resetTimer() {
         clearTimeout(inactivityTimer);
-        inactivityTimer = setTimeout(endSessionAndSendLog, 60000);
+        inactivityTimer = setTimeout(endSessionAndSendLog, 10000);
       }
 
       // 页面关闭时发送
